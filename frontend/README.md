@@ -1,6 +1,6 @@
-# LearnConnect Frontend
+# Classroom Frontend
 
-This is the frontend application for **LearnConnect**, a modern Learning Management System (LMS) built with Next.js and Tailwind CSS. It provides distinct, feature-rich portals for both Faculty and Students.
+This is the frontend application for **Classroom**, a modern Learning Management System (LMS) built with Next.js and Tailwind CSS. It provides distinct, feature-rich portals for both Faculty and Students.
 
 ## Features
 

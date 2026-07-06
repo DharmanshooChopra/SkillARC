@@ -2,51 +2,53 @@ import subprocess
 import os
 import sys
 import time
-import signal
 
-def main():
-    project_dir = os.path.dirname(os.path.abspath(__file__))
-    frontend_dir = os.path.join(project_dir, "frontend")
-    backend_dir = os.path.join(project_dir, "backend")
+def run():
+    print("Starting Learning Management System Servers...")
+    
+    # Paths
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_dir = os.path.join(base_dir, "backend")
+    frontend_dir = os.path.join(base_dir, "frontend")
 
-    print("🚀 Starting LearnConnect LMS...")
-
-    # Start FastAPI Backend
-    print("⏳ Starting FastAPI backend on port 8000...")
-    # Use venv python explicitly
-    backend_cmd = "venv/bin/python -m uvicorn main:app --reload --port 8000"
-    backend_process = subprocess.Popen(
-        backend_cmd, 
-        cwd=backend_dir, 
-        shell=True
-    )
-
-    # Start Next.js Frontend
-    print("⏳ Starting Next.js frontend on port 3000...")
-    frontend_process = subprocess.Popen(
-        "npm run dev", 
-        cwd=frontend_dir,
-        shell=True # Required on some systems to resolve 'npm'
-    )
-
-    def shutdown_handler(signum, frame):
-        print("\n🛑 Shutting down servers...")
-        backend_process.terminate()
-        frontend_process.terminate()
-        backend_process.wait()
-        frontend_process.wait()
-        print("✅ Servers stopped.")
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, shutdown_handler)
-    signal.signal(signal.SIGTERM, shutdown_handler)
+    processes = []
 
     try:
-        # Keep the main process alive to catch signals
-        while True:
-            time.sleep(1)
+        # Start FastAPI backend (Port 8000)
+        print("Starting FastAPI Backend on port 8000...")
+        backend_process = subprocess.Popen(
+            ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+            cwd=backend_dir,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+        processes.append(backend_process)
+
+        # Wait a moment before starting frontend
+        time.sleep(2)
+
+        # Start Next.js frontend (Port 3000)
+        print("Starting Next.js Frontend on port 3000...")
+        frontend_process = subprocess.Popen(
+            ["npm", "run", "dev"],
+            cwd=frontend_dir,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+        processes.append(frontend_process)
+
+        # Keep the script running
+        for p in processes:
+            p.wait()
+
     except KeyboardInterrupt:
-        shutdown_handler(signal.SIGINT, None)
+        print("\nShutting down servers...")
+        for p in processes:
+            p.terminate()
+        for p in processes:
+            p.wait()
+        print("Shutdown complete.")
+        sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    run()
