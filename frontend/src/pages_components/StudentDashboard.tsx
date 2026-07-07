@@ -8,7 +8,8 @@ import { JoinClassModal } from "../components/JoinClassModal";
 import { motion } from "framer-motion";
 
 export function StudentDashboard() {
-  const { classes, assignments } = useAppContext();
+  const { classes, assignments, joinedClassIds } = useAppContext();
+  const enrolledClasses = classes.filter(c => joinedClassIds.includes(c.id));
   const [joinOpen, setJoinOpen] = useState(false);
 
   const containerVariants = {
@@ -44,7 +45,7 @@ export function StudentDashboard() {
           animate="show"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {classes.map((c) => {
+          {enrolledClasses.map((c) => {
             const classAssignments = assignments.filter(a => a.classId === c.id);
             const activeAssignments = classAssignments.filter(a => a.status === 'Active').length;
 

@@ -20,7 +20,7 @@ const CLASS_REGISTRY: Record<string, string> = {
 const LINK_REGEX = /classroom\.app\/join\/([A-Z0-9]+)/i;
 
 export function JoinClassModal({ open, onClose }: JoinClassModalProps) {
-  const { classes, addClass } = useAppContext();
+  const { classes, addClass, joinClass } = useAppContext();
   const [tab, setTab] = useState<JoinTab>("code");
   const [code, setCode] = useState("");
   const [link, setLink] = useState("");
@@ -85,6 +85,7 @@ export function JoinClassModal({ open, onClose }: JoinClassModalProps) {
 
     setStatus("success");
     setSuccessMsg(`You've joined "${found.name}" successfully!`);
+    joinClass(found.id);
     setTimeout(() => onClose(), 2000);
   };
 

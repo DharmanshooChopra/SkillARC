@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text, Enum, JSON
 from sqlalchemy.orm import relationship
 import enum
 import datetime
@@ -7,6 +7,12 @@ from database import Base
 class RoleEnum(str, enum.Enum):
     faculty = "faculty"
     student = "student"
+
+class AssignmentTypeEnum(str, enum.Enum):
+    assignment = "Assignment"
+    quiz = "Quiz"
+    coding = "Coding Assignment"
+    material = "Material"
 
 class User(Base):
     __tablename__ = "users"
@@ -25,17 +31,16 @@ class Classroom(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     section = Column(String, nullable=True)
-    class_code = Column(String, unique=True, index=True, nullable=True)
+    subject_code = Column(String, nullable=True)
+    class_code = Column(String, unique=True, index=True, nullable=True) # Used as joinCode in frontend
     faculty_id = Column(Integer, ForeignKey("users.id"))
     
     faculty = relationship("User", back_populates="classrooms_created")
     enrollments = relationship("Enrollment", back_populates="classroom")
     announcements = relationship("Announcement", back_populates="classroom")
-    materials = relationship("Material", back_populates="classroom")
     assignments = relationship("Assignment", back_populates="classroom")
-    quizzes = relationship("Quiz", back_populates="classroom")
-    codings = relationship("Coding", back_populates="classroom")
     calendar_events = relationship("CalendarEvent", back_populates="classroom")
+    notifications = relationship("Notification", back_populates="classroom")
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
@@ -50,106 +55,81 @@ class Announcement(Base):
     __tablename__ = "announcements"
     id = Column(Integer, primary_key=True, index=True)
     classroom_id = Column(Integer, ForeignKey("classrooms.id"))
+    author = Column(String, nullable=False) # Store author name directly for simplicity as per frontend
     content = Column(Text, nullable=False)
+    attachments = Column(JSON, nullable=True) # Matches frontend attachments array
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     classroom = relationship("Classroom", back_populates="announcements")
-
-class Material(Base):
-    __tablename__ = "materials"
-    id = Column(Integer, primary_key=True, index=True)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"))
-    title = Column(String, nullable=False)
-    content = Column(Text, nullable=False) # Store text or link
-    file_url = Column(String, nullable=True) # Optional uploaded file URL
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
-    classroom = relationship("Classroom", back_populates="materials")
 
 class Assignment(Base):
     __tablename__ = "assignments"
     id = Column(Integer, primary_key=True, index=True)
     classroom_id = Column(Integer, ForeignKey("classrooms.id"))
     title = Column(String, nullable=False)
-    description = Column(Text)
-    file_url = Column(String, nullable=True) # Optional uploaded file URL
-    deadline = Column(DateTime, nullable=False)
+    type = Column(Enum(AssignmentTypeEnum), nullable=False)
+    status = Column(String, default="Active")
+    description = Column(Text, nullable=True)
+    max_score = Column(Integer, nullable=True)
+    files = Column(JSON, nullable=True) # List of file URLs/names
+    
+    # Quiz Specific
+    questions = Column(JSON, nullable=True)
+    
+    # Coding Specific
+    language = Column(String, nullable=True)
+    test_cases = Column(JSON, nullable=True)
+    
+    deadline = Column(DateTime, nullable=True) # Nullable for materials
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     classroom = relationship("Classroom", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment")
 
-class Quiz(Base):
-    __tablename__ = "quizzes"
-    id = Column(Integer, primary_key=True, index=True)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"))
-    title = Column(String, nullable=False)
-    description = Column(Text)
-    quiz_link = Column(String, nullable=True) # Optional Google Forms link
-    deadline = Column(DateTime, nullable=False)
-    timer_minutes = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
-    classroom = relationship("Classroom", back_populates="quizzes")
-    submissions = relationship("Submission", back_populates="quiz")
-
-class Coding(Base):
-    __tablename__ = "codings"
-    id = Column(Integer, primary_key=True, index=True)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"))
-    title = Column(String, nullable=False)
-    problem_statement = Column(Text, nullable=False)
-    deadline = Column(DateTime, nullable=False)
-    timer_minutes = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
-    classroom = relationship("Classroom", back_populates="codings")
-    submissions = relationship("Submission", back_populates="coding")
-
 class Submission(Base):
     __tablename__ = "submissions"
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"))
-    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=True)
-    coding_id = Column(Integer, ForeignKey("codings.id"), nullable=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"))
     
-    content = Column(Text, nullable=False) # Store answers, code, or file link
-    submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
-    # Grading fields
-    marks_assigned = Column(Integer, nullable=True)
-    marks_hidden = Column(Boolean, default=True) # Hidden until faculty releases
+    status = Column(String, default="pending") # pending, graded
+    files = Column(JSON, nullable=True)
+    code_snippet = Column(Text, nullable=True)
+    score = Column(Integer, nullable=True)
     feedback = Column(Text, nullable=True)
+    
+    submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    graded_at = Column(DateTime, nullable=True)
     
     student = relationship("User", back_populates="submissions")
     assignment = relationship("Assignment", back_populates="submissions")
-    quiz = relationship("Quiz", back_populates="submissions")
-    coding = relationship("Coding", back_populates="submissions")
-    grading = relationship("Grading", back_populates="submission", uselist=False)
 
-class Grading(Base):
-    __tablename__ = "gradings"
+class Notification(Base):
+    __tablename__ = "notifications"
     id = Column(Integer, primary_key=True, index=True)
-    submission_id = Column(Integer, ForeignKey("submissions.id"))
-    final_score = Column(Integer, nullable=False)
-    comments = Column(Text, nullable=True)
+    type = Column(String, nullable=False) # 'announcement' | 'assignment_graded' | 'new_assignment'
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    read = Column(Boolean, default=False)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"))
+    link = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
-    submission = relationship("Submission", back_populates="grading")
-
-class CalendarEventType(str, enum.Enum):
-    holiday = "holiday"
-    deadline = "deadline"
-    lecture = "lecture"
+    classroom = relationship("Classroom", back_populates="notifications")
 
 class CalendarEvent(Base):
     __tablename__ = "calendar_events"
     id = Column(Integer, primary_key=True, index=True)
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=True) # Null for global holidays
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=True) # null for global events
     title = Column(String, nullable=False)
-    event_type = Column(Enum(CalendarEventType), nullable=False)
-    date = Column(DateTime, nullable=False)
-    is_default = Column(Boolean, default=False) # True for default Sundays/Festivals
+    note = Column(Text, nullable=True)
+    event_date = Column(DateTime, nullable=False)
     
     classroom = relationship("Classroom", back_populates="calendar_events")
+
+class Holiday(Base):
+    __tablename__ = "holidays"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    date = Column(DateTime, nullable=False)
+    type = Column(String, nullable=True) # e.g., 'National', 'Festival'

@@ -80,6 +80,8 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   isCreateModalOpen: boolean;
   setCreateModalOpen: (open: boolean) => void;
+  joinedClassIds: string[];
+  joinClass: (classId: string) => void;
 }
 
 const defaultContext: AppContextType = {
@@ -101,12 +103,15 @@ const defaultContext: AppContextType = {
   markNotificationRead: () => {},
   isCreateModalOpen: false,
   setCreateModalOpen: () => {},
+  joinedClassIds: [],
+  joinClass: () => {},
 };
 
 const AppContext = createContext<AppContextType>(defaultContext);
 
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [classes, setClasses] = useState<ClassItem[]>(initialClasses);
+  const [joinedClassIds, setJoinedClassIds] = useState<string[]>(['c1', 'c2', 'c3']);
   const [assignments, setAssignments] = useState<AssignmentItem[]>(initialAssignments as AssignmentItem[]);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(initialSubmissions);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -171,6 +176,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     // Also remove related assignments and announcements?
     setAssignments(prev => prev.filter(a => a.classId !== id));
     setAnnouncements(prev => prev.filter(a => a.classId !== id));
+    setJoinedClassIds(prev => prev.filter(classId => classId !== id));
+  };
+
+  const joinClass = (classId: string) => {
+    if (!joinedClassIds.includes(classId)) {
+      setJoinedClassIds(prev => [...prev, classId]);
+    }
   };
 
   const addAssignment = (newAssignment: Omit<AssignmentItem, 'id'>) => {
@@ -265,6 +277,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       announcements, addAnnouncement,
       notifications, markNotificationRead,
       isCreateModalOpen, setCreateModalOpen,
+      joinedClassIds, joinClass,
     }}>
       {children}
     </AppContext.Provider>

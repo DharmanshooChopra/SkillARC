@@ -1,14 +1,21 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional, Any, Dict
 from datetime import datetime
-from enum import Enum
+import enum
 
-class RoleEnum(str, Enum):
+class RoleEnum(str, enum.Enum):
     faculty = "faculty"
     student = "student"
 
+class AssignmentTypeEnum(str, enum.Enum):
+    assignment = "Assignment"
+    quiz = "Quiz"
+    coding = "Coding Assignment"
+    material = "Material"
+
+# --- User Schemas ---
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     name: str
     role: RoleEnum
 
@@ -20,157 +27,122 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+# --- Classroom Schemas ---
 class ClassroomBase(BaseModel):
     name: str
     section: Optional[str] = None
+    subject_code: Optional[str] = None
 
 class ClassroomCreate(ClassroomBase):
     faculty_id: int
 
 class ClassroomResponse(ClassroomBase):
     id: int
+    class_code: Optional[str] = None # Maps to joinCode in frontend
     faculty_id: int
-    class_code: str
-    student_count: int = 0
-    active_tasks: int = 0
     class Config:
         from_attributes = True
 
-class AnnouncementCreate(BaseModel):
+# --- Announcement Schemas ---
+class AnnouncementBase(BaseModel):
+    author: str
     content: str
+    attachments: Optional[List[Dict[str, Any]]] = None
 
-class AnnouncementResponse(BaseModel):
-    id: int
-    classroom_id: int
-    content: str
-    created_at: datetime
-    class Config:
-        from_attributes = True
+class AnnouncementCreate(AnnouncementBase):
+    pass
 
-class MaterialCreate(BaseModel):
-    title: str
-    content: str
-    file_url: Optional[str] = None
-
-class MaterialResponse(MaterialCreate):
+class AnnouncementResponse(AnnouncementBase):
     id: int
     classroom_id: int
     created_at: datetime
     class Config:
         from_attributes = True
 
-class AssignmentCreate(BaseModel):
+# --- Assignment Schemas (Polymorphic) ---
+class AssignmentBase(BaseModel):
     title: str
+    type: AssignmentTypeEnum
+    status: Optional[str] = "Active"
     description: Optional[str] = None
-    file_url: Optional[str] = None
-    deadline: datetime
+    max_score: Optional[int] = None
+    files: Optional[List[str]] = None
+    
+    questions: Optional[List[Dict[str, Any]]] = None # For Quizzes
+    language: Optional[str] = None # For Coding
+    test_cases: Optional[List[Dict[str, Any]]] = None # For Coding
+    
+    deadline: Optional[datetime] = None
 
-class AssignmentResponse(AssignmentCreate):
+class AssignmentCreate(AssignmentBase):
+    pass
+
+class AssignmentResponse(AssignmentBase):
     id: int
     classroom_id: int
     created_at: datetime
     class Config:
         from_attributes = True
 
-class QuizCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    quiz_link: Optional[str] = None
-    deadline: datetime
-    timer_minutes: int
+# --- Submission Schemas ---
+class SubmissionBase(BaseModel):
+    status: Optional[str] = "pending"
+    files: Optional[List[str]] = None
+    code_snippet: Optional[str] = None
+    score: Optional[int] = None
+    feedback: Optional[str] = None
 
-class QuizResponse(QuizCreate):
-    id: int
-    classroom_id: int
-    created_at: datetime
-    class Config:
-        from_attributes = True
+class SubmissionCreate(SubmissionBase):
+    student_id: int
+    assignment_id: int
 
-class CodingCreate(BaseModel):
-    title: str
-    problem_statement: str
-    deadline: datetime
-    timer_minutes: int
-
-class CodingResponse(CodingCreate):
-    id: int
-    classroom_id: int
-    created_at: datetime
-    class Config:
-        from_attributes = True
-
-class SubmissionCreate(BaseModel):
-    content: str
-
-class SubmissionResponse(BaseModel):
+class SubmissionResponse(SubmissionBase):
     id: int
     student_id: int
-    assignment_id: Optional[int] = None
-    quiz_id: Optional[int] = None
-    coding_id: Optional[int] = None
-    content: str
+    assignment_id: int
     submitted_at: datetime
-    marks_assigned: Optional[int] = None
-    marks_hidden: bool
-    feedback: Optional[str] = None
-    
+    graded_at: Optional[datetime] = None
     class Config:
         from_attributes = True
 
-class SubmissionWithStudentResponse(SubmissionResponse):
-    student: UserResponse
-    class Config:
-        from_attributes = True
+# --- Notification Schemas ---
+class NotificationBase(BaseModel):
+    type: str
+    title: str
+    message: str
+    read: Optional[bool] = False
+    link: Optional[str] = None
 
-class EnrollmentCreate(BaseModel):
+class NotificationCreate(NotificationBase):
     classroom_id: int
 
-class EnrollmentResponse(BaseModel):
+class NotificationResponse(NotificationBase):
     id: int
-    user_id: int
     classroom_id: int
+    created_at: datetime
     class Config:
         from_attributes = True
 
-class GradingCreate(BaseModel):
-    final_score: int
-    comments: Optional[str] = None
-    marks_hidden: bool = True
-
-class CalendarEventType(str, Enum):
-    holiday = "holiday"
-    deadline = "deadline"
-    lecture = "lecture"
-
+# --- Calendar Event Schemas ---
 class CalendarEventBase(BaseModel):
     title: str
-    event_type: CalendarEventType
-    date: datetime
-    is_default: bool = False
-    classroom_id: Optional[int] = None
+    note: Optional[str] = None
+    event_date: datetime
 
 class CalendarEventCreate(CalendarEventBase):
     pass
 
 class CalendarEventResponse(CalendarEventBase):
     id: int
+    classroom_id: Optional[int] = None
     class Config:
         from_attributes = True
 
-class TaskType(str, Enum):
-    assignment = "assignment"
-    quiz = "quiz"
-    coding = "coding"
-
-class TaskResponse(BaseModel):
+# --- Holiday Schemas ---
+class HolidayResponse(BaseModel):
     id: int
-    title: str
-    description: Optional[str] = None
-    deadline: datetime
-    task_type: TaskType
-    classroom_id: int
-    classroom_name: str
-    is_submitted: bool
-    
+    name: str
+    date: datetime
+    type: Optional[str] = None
     class Config:
         from_attributes = True
