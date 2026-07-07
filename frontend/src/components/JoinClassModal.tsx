@@ -57,8 +57,13 @@ export function JoinClassModal({ open, onClose }: JoinClassModalProps) {
     const upper = classCode.trim().toUpperCase();
     // Check against registry
     if (CLASS_REGISTRY[upper]) return CLASS_REGISTRY[upper];
-    // Also check classes that have a joinCode
-    const cls = classes.find(c => c.joinCode === upper || c.joinCode === classCode.trim());
+    // Also check classes that have a joinCode or match the first 6 chars of ID
+    const cls = classes.find(c => 
+      c.joinCode === upper || 
+      c.joinCode === classCode.trim() ||
+      c.id.toUpperCase() === upper ||
+      c.id.substring(0, 6).toUpperCase() === upper
+    );
     return cls?.id || null;
   };
 

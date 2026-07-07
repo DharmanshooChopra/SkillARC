@@ -1,4 +1,4 @@
-# SkillARC - Learning Management System
+# Classroom - Learning Management System
 ## Project Architecture & Technical Report
 
 ---

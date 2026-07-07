@@ -13,6 +13,18 @@ import { useAppContext } from "../context/AppContext";
 const STUDENT_ID = "s1";
 const STUDENT_NAME = "Alex Johnson";
 
+const mockDownload = (filename: string) => {
+  const blob = new Blob([`Mock content for ${filename}\n\nDownloaded from LMS.`], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 // ─── Language templates ──────────────────────────────────────────────────────
 const LANG_TEMPLATES: Record<string, string> = {
   python: `class Queue:
@@ -251,7 +263,7 @@ function CodingView({ assignment, onSubmit, alreadySubmitted }: {
     setTimeout(() => {
       const cases = assignment.testCases || [];
       const results = cases.map((tc: any, i: number) => {
-        const passed = Math.random() > 0.15;
+        const passed = true; // Fixed random failure behavior
         return { passed, label: `Test ${i + 1}: Input(${tc.input}) → Expected: ${tc.output}` };
       });
       if (results.length === 0) {
@@ -889,13 +901,13 @@ function AssignmentView({ assignment, onSubmit, alreadySubmitted, submission, ma
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Attachments</h3>
                   <div className="space-y-2">
                     {assignment.files.map((f: string, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group">
+                      <a key={i} href={f.startsWith('http') ? f : `#`} onClick={f.startsWith('http') ? undefined : (e) => { e.preventDefault(); mockDownload(f); }} target={f.startsWith('http') ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group">
                         <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <FileText className="w-4 h-4 text-red-600" />
                         </div>
                         <span className="text-sm font-medium text-gray-800 flex-1">{f}</span>
                         <Download className="w-4 h-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
-                      </div>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -905,7 +917,8 @@ function AssignmentView({ assignment, onSubmit, alreadySubmitted, submission, ma
         </div>
 
         {/* Right: Submission panel */}
-        <div className="w-[400px] flex-shrink-0 flex flex-col overflow-y-auto">
+        {assignment.type !== 'Material' && (
+        <div className="w-[400px] flex-shrink-0 flex flex-col overflow-y-auto bg-white border-l border-slate-200">
           {alreadySubmitted ? (
             <div className="flex flex-col gap-4 p-6">
               {submission?.status === "graded" ? (
@@ -950,7 +963,7 @@ function AssignmentView({ assignment, onSubmit, alreadySubmitted, submission, ma
                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-2">Files</label>
                         <div className="space-y-2">
                           {attachedFiles.map((f, i) => (
-                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-xl">
+                            <a key={i} onClick={() => mockDownload(f)} className="flex items-center gap-3 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-xl cursor-pointer hover:bg-indigo-100 transition-colors">
                               <FileText className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                               <span className="text-sm text-indigo-800 font-medium flex-1 truncate">{f}</span>
                               <Download className="w-4 h-4 text-indigo-500 cursor-pointer hover:text-indigo-700" />
@@ -1061,6 +1074,7 @@ function AssignmentView({ assignment, onSubmit, alreadySubmitted, submission, ma
             </div>
           )}
         </div>
+        )}
       </div>
     </>
   );

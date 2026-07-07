@@ -10,6 +10,18 @@ import {
 } from "lucide-react";
 import { JoinClassModal } from "../components/JoinClassModal";
 
+const mockDownload = (filename: string) => {
+  const blob = new Blob([`Mock content for ${filename}\n\nDownloaded from LMS.`], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 const STUDENT_ID = "s1";
 
 // Mock student roster per class (same for all classes in this prototype)
@@ -144,7 +156,7 @@ export function StudentClassHub() {
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900">{ann.author}</h4>
-                              <p className="text-xs text-gray-500">
+                              <p suppressHydrationWarning className="text-xs text-gray-500">
                                 {new Date(ann.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                               </p>
                             </div>
@@ -154,7 +166,7 @@ export function StudentClassHub() {
                           {ann.attachments && ann.attachments.length > 0 && (
                             <div className="space-y-2 mt-4">
                               {ann.attachments.map((file: any, i: number) => (
-                                <div key={i} className="border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:bg-slate-50 cursor-pointer transition-colors group">
+                                <div key={i} onClick={() => mockDownload(file.name)} className="border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:bg-slate-50 cursor-pointer transition-colors group">
                                   <div className="p-2 bg-red-100 text-red-600 rounded-lg">
                                     <FileText className="w-5 h-5" />
                                   </div>
@@ -185,7 +197,7 @@ export function StudentClassHub() {
                           </div>
                           <span className="ml-auto text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">Material</span>
                         </div>
-                        <div className="border border-amber-200 rounded-xl p-4 flex items-center gap-3 hover:bg-amber-50 cursor-pointer transition-colors group">
+                        <div onClick={() => mockDownload(mat.title)} className="border border-amber-200 rounded-xl p-4 flex items-center gap-3 hover:bg-amber-50 cursor-pointer transition-colors group">
                           <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <BookOpen className="w-5 h-5 text-amber-600" />
                           </div>

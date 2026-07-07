@@ -32,6 +32,7 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
 
   const [language, setLanguage] = useState('all');
   const [testCases, setTestCases] = useState<TestCase[]>([{ input: '', output: '' }]);
+  const [materialFiles, setMaterialFiles] = useState<string[]>([]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -47,6 +48,7 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
       setQuestions([{ q: '', options: ['', '', '', ''], answer: 0 }]);
       setLanguage('all');
       setTestCases([{ input: '', output: '' }]);
+      setMaterialFiles([]);
     }
   }, [isOpen, initialType]);
 
@@ -67,6 +69,7 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
       status: 'Active',
       description: description.trim(),
       maxScore: type === 'Material' ? 0 : maxScore,
+      ...(type === 'Material' && materialFiles.length > 0 ? { files: materialFiles } : {}),
       ...(type === 'Quiz' ? { questions, ...(timeLimit ? { timeLimit: Number(timeLimit) } : {}) } : {}),
       ...(type === 'Coding Assignment' ? { testCases, language } : {}),
     });
@@ -364,6 +367,37 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
           placeholder="https://docs.google.com/…"
           className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-400 outline-none transition-colors placeholder:text-gray-400"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+          Upload Files <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          type="file"
+          multiple
+          onChange={e => {
+            if (e.target.files) {
+              const newFiles = Array.from(e.target.files).map(f => f.name);
+              setMaterialFiles(prev => [...prev, ...newFiles]);
+            }
+          }}
+          className="w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors"
+        />
+        {materialFiles.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {materialFiles.map((f, i) => (
+              <div key={i} className="flex items-center justify-between bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
+                <span className="text-sm text-amber-800 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-amber-500" />
+                  {f}
+                </span>
+                <button type="button" onClick={() => setMaterialFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-amber-400 hover:text-amber-600 p-1">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
         <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />

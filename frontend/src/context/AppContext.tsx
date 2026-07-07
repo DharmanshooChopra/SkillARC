@@ -69,6 +69,7 @@ interface AppContextType {
   assignments: AssignmentItem[];
   addAssignment: (newAssignment: Omit<AssignmentItem, 'id'>) => void;
   updateAssignment: (id: string, updates: Partial<AssignmentItem>) => void;
+  deleteAssignment: (id: string) => void;
   submissions: StudentSubmission[];
   gradeSubmission: (submissionId: string, score: number, feedback: string) => void;
   addSubmission: (submission: Omit<StudentSubmission, 'id'>) => void;
@@ -76,6 +77,7 @@ interface AppContextType {
   addEvent: (event: Omit<CalendarEvent, 'id'>) => void;
   announcements: AnnouncementItem[];
   addAnnouncement: (announcement: Omit<AnnouncementItem, 'id' | 'createdAt'>) => void;
+  deleteAnnouncement: (id: string) => void;
   notifications: StudentNotification[];
   markNotificationRead: (id: string) => void;
   isCreateModalOpen: boolean;
@@ -92,6 +94,7 @@ const defaultContext: AppContextType = {
   assignments: initialAssignments as AssignmentItem[],
   addAssignment: () => {},
   updateAssignment: () => {},
+  deleteAssignment: () => {},
   submissions: initialSubmissions,
   gradeSubmission: () => {},
   addSubmission: () => {},
@@ -99,6 +102,7 @@ const defaultContext: AppContextType = {
   addEvent: () => {},
   announcements: [],
   addAnnouncement: () => {},
+  deleteAnnouncement: () => {},
   notifications: [],
   markNotificationRead: () => {},
   isCreateModalOpen: false,
@@ -114,7 +118,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [joinedClassIds, setJoinedClassIds] = useState<string[]>(['c1', 'c2', 'c3']);
   const [assignments, setAssignments] = useState<AssignmentItem[]>(initialAssignments as AssignmentItem[]);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(initialSubmissions);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([
+    { id: 'h1', date: new Date('2026-10-31T00:00:00'), title: 'Diwali', note: 'Festival Holiday' },
+    { id: 'h2', date: new Date('2026-12-25T00:00:00'), title: 'Christmas', note: 'Festival Holiday' },
+    { id: 'h3', date: new Date('2026-01-26T00:00:00'), title: 'Republic Day', note: 'National Holiday' },
+  ]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([
     {
       id: 'ann1',
@@ -230,6 +238,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
 
+  const deleteAssignment = (id: string) => {
+    setAssignments(prev => prev.filter(a => a.id !== id));
+  };
+
   const gradeSubmission = (submissionId: string, score: number, feedback: string) => {
     setSubmissions(prev =>
       prev.map(s =>
@@ -239,7 +251,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const addEvent = (event: Omit<CalendarEvent, 'id'>) => {
-    setEvents([...events, { id: `e${Date.now()}`, ...event }]);
+    setEvents(prev => [...prev, { id: `e${Date.now()}`, ...event }]);
   };
 
   const addAnnouncement = (newAnnouncement: Omit<AnnouncementItem, 'id' | 'createdAt'>) => {
@@ -259,6 +271,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }, ...prev]);
   };
 
+  const deleteAnnouncement = (id: string) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
   const addSubmission = (submission: Omit<StudentSubmission, 'id'>) => {
     const id = `sub${Date.now()}`;
     setSubmissions(prev => [...prev, { id, ...submission }]);
@@ -271,10 +287,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AppContext.Provider value={{
       classes, addClass, updateClass, deleteClass,
-      assignments, addAssignment, updateAssignment,
+      assignments, addAssignment, updateAssignment, deleteAssignment,
       submissions, gradeSubmission, addSubmission,
       events, addEvent,
-      announcements, addAnnouncement,
+      announcements, addAnnouncement, deleteAnnouncement,
       notifications, markNotificationRead,
       isCreateModalOpen, setCreateModalOpen,
       joinedClassIds, joinClass,

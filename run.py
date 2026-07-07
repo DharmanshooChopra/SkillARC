@@ -16,8 +16,13 @@ def run():
     try:
         # Start FastAPI backend (Port 8000)
         print("Starting FastAPI Backend on port 8000...")
+        uvicorn_executable = "uvicorn"
+        venv_uvicorn = os.path.join(backend_dir, "venv", "bin", "uvicorn")
+        if os.path.exists(venv_uvicorn):
+            uvicorn_executable = venv_uvicorn
+            
         backend_process = subprocess.Popen(
-            ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+            [uvicorn_executable, "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
             cwd=backend_dir,
             stdout=sys.stdout,
             stderr=sys.stderr

@@ -38,7 +38,7 @@ export function FacultyClassHub() {
   
   // Removed location.state?.tab effect since Next.js usePathname doesn't have state
 
-  const { classes, assignments, submissions, announcements, addAnnouncement } = useAppContext();
+  const { classes, assignments, submissions, announcements, addAnnouncement, deleteAssignment, deleteAnnouncement } = useAppContext();
 
   // Local state for students
   const [studentsList, setStudentsList] = useState(() => 
@@ -154,6 +154,18 @@ export function FacultyClassHub() {
             )}
           </div>
         )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm('Are you sure you want to delete this?')) {
+              deleteAssignment(item.id);
+            }
+          }}
+          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          title="Delete"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
         <button
           onClick={() => setEditingAssignment(item)}
           className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
@@ -337,7 +349,7 @@ export function FacultyClassHub() {
                   </div>
                 ) : (
                   classAnnouncements.map((ann) => (
-                    <div key={ann.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div key={ann.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 group relative">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                           <span className="text-indigo-600 font-bold text-sm">
@@ -346,7 +358,7 @@ export function FacultyClassHub() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900">{ann.author}</h4>
-                          <p className="text-xs text-gray-500">
+                          <p suppressHydrationWarning className="text-xs text-gray-500">
                             {new Date(ann.createdAt).toLocaleDateString('en-IN', {
                               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                             })}
@@ -371,6 +383,18 @@ export function FacultyClassHub() {
                           ))}
                         </div>
                       )}
+
+                      <button
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this announcement?')) {
+                            deleteAnnouncement(ann.id);
+                          }
+                        }}
+                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))
                 )}
