@@ -20,7 +20,7 @@ export type AssignmentItem = {
   status: string;
   description?: string;
   maxScore?: number;
-  files?: string[];
+  files?: any[];
   // Quiz
   questions?: QuizQuestion[];
   // Coding

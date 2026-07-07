@@ -375,10 +375,17 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
         <input
           type="file"
           multiple
-          onChange={e => {
+          onChange={async (e) => {
             if (e.target.files) {
-              const newFiles = Array.from(e.target.files).map(f => f.name);
-              setMaterialFiles(prev => [...prev, ...newFiles]);
+              const filesArray = Array.from(e.target.files);
+              const readFiles = await Promise.all(filesArray.map(f => {
+                return new Promise<any>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => resolve({ name: f.name, data: ev.target?.result });
+                  reader.readAsDataURL(f);
+                });
+              }));
+              setMaterialFiles(prev => [...prev, ...readFiles]);
             }
           }}
           className="w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition-colors"
@@ -387,11 +394,11 @@ export function CreateWorksheetModal({ isOpen, onClose, classId, initialType }: 
           <div className="mt-3 space-y-2">
             {materialFiles.map((f, i) => (
               <div key={i} className="flex items-center justify-between bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
-                <span className="text-sm text-amber-800 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-amber-500" />
-                  {f}
+                <span className="text-sm text-amber-800 flex items-center gap-2 truncate">
+                  <FileText className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  {typeof f === 'string' ? f : f.name}
                 </span>
-                <button type="button" onClick={() => setMaterialFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-amber-400 hover:text-amber-600 p-1">
+                <button type="button" onClick={() => setMaterialFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-amber-400 hover:text-amber-600 p-1 flex-shrink-0">
                   <X className="w-4 h-4" />
                 </button>
               </div>

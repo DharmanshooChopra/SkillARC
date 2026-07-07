@@ -13,8 +13,45 @@ import { useAppContext } from "../context/AppContext";
 const STUDENT_ID = "s1";
 const STUDENT_NAME = "Alex Johnson";
 
-const mockDownload = (filename: string) => {
-  const blob = new Blob([`Mock content for ${filename}\n\nDownloaded from LMS.`], { type: 'text/plain' });
+const getMimeType = (filename: string) => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'pdf': return 'application/pdf';
+    case 'png': return 'image/png';
+    case 'jpg': case 'jpeg': return 'image/jpeg';
+    case 'doc': case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'ppt': case 'pptx': return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    case 'xls': case 'xlsx': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    case 'mp4': return 'video/mp4';
+    case 'zip': return 'application/zip';
+    case 'csv': return 'text/csv';
+    case 'txt': return 'text/plain';
+    default: return 'application/octet-stream';
+  }
+};
+
+const mockDownload = (f: any) => {
+  const filename = typeof f === 'string' ? f : f.name;
+  
+  if (typeof f === 'object' && f.data) {
+    const a = document.createElement('a');
+    a.href = f.data;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return;
+  }
+
+  const mimeType = getMimeType(filename);
+  let content: BlobPart = `Mock content for ${filename}\n\nDownloaded from LMS.`;
+  
+  if (mimeType === 'application/pdf') {
+    // Minimal valid PDF structure
+    content = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 3 3]>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n0000000109 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n149\n%EOF\n";
+  }
+  
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -967,7 +1004,7 @@ function AssignmentView({ assignment, onSubmit, alreadySubmitted, submission, ma
                               <FileText className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                               <span className="text-sm text-indigo-800 font-medium flex-1 truncate">{f}</span>
                               <Download className="w-4 h-4 text-indigo-500 cursor-pointer hover:text-indigo-700" />
-                            </div>
+                            </a>
                           ))}
                         </div>
                       </div>
